@@ -56,7 +56,7 @@ python3 scripts/preview-server.py --resource-root "/path/to/Vault"
 | Hardware and assembly | Show specifications, quantities per module, uses, and manual pages; selecting the Grid roof handle also adds two M6 × 50 mm bolts |
 | 3D preview | Rotate, zoom, inspect model dimensions, and save copies; the local server also supports locating the original file |
 | Accessories and modifications | Find matching baseplates, dividers, and alternative parts; browse bases, wheels, handles, and more in eight modification categories |
-| Manuals | Choose from five guides by purpose, check local availability, jump to assembly pages, and fall back to another language when needed |
+| Manuals | Choose from five guides by purpose, check local availability, jump to assembly pages, and match differently named editions by number, title, and language |
 | Print plan | Save multiple builds, combine STL and hardware quantities, enter divider quantities, track progress, and export CSV |
 
 ## Screenshots
@@ -86,6 +86,7 @@ These screenshots show the current Chinese interface. Click an image to view it 
 - **Counting quantities:** File counts and print quantities are shown separately. `×2` means two copies of the STL; parts already paired inside a file are not doubled. Enter layout-dependent quantities such as dividers manually, using `0` for unused parts. Complete these quantities before exporting.
 - **Adding optional parts:** **Use this option** updates the current configuration. Click **Add to print plan** afterward to save it. Browsing accessories does not add them, and changing the current configuration does not overwrite saved builds.
 - **Hardware scope:** Drawer and case hardware totals scale with the number of modules. Modification hardware is listed separately per wheel, foot, or other assembly. Unspecified installation quantities remain marked for review, with reminders in the relevant build and CSV export.
+- **Manual editions:** Filenames do not need to match exactly. The workbench identifies editions by the number (01–05), Chinese/English title keywords, and language markers, tolerating case, spaces/underscores, `(1)`/`copy` suffixes, and Chinese, English, and bilingual editions stored side by side. Priority is the current language, then a bilingual edition, then the other official language, then any other language, with the actual edition labelled in the interface. Page links are only trusted for the official filename in the current language; bilingual, renamed, and translated editions open at page one.
 - **Saving and restoring:** Language, configurations, and the print plan are saved in the current browser when storage is available. Browsers with directory access can remember the folder; click **Reconnect folder** if permission is needed again. Other browsers require a new selection. Use **Rescan folder** after resource updates; disconnecting forgets the folder.
 - **Data boundaries:** Different browsers, opening methods, or ports use separate browser storage. Clearing browser data may erase your plan. Export a CSV for your records; CSV import is not currently supported. **Save a copy** does not overwrite the original file.
 
@@ -94,7 +95,7 @@ These screenshots show the current Chinese interface. Click an image to view it 
 
 - Verified in desktop Chrome; other browsers have not received equivalent testing. 3D preview requires WebGL 2, and dimensions are interpreted as millimeters.
 - If a PDF cannot be displayed inline, open it in a new tab or download it.
-- Select one resource pack at a time. Missing files and filename conflicts are flagged; keep the original folder structure and filenames.
+- Select one resource pack at a time. Missing files and filename conflicts are flagged; keep the original folder structure and, for manuals, the number and language markers so editions stay distinguishable.
 - If the port is occupied, use `--port ANOTHER_PORT`. Plans saved at the old port are not migrated automatically; use `--port ORIGINAL_PORT` to revisit and export them.
 - Refresh the page after updating the workbench. If an old server is still running, stop it and restart the launcher.
 

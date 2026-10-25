@@ -49,7 +49,7 @@
       for (const [id, [title, description]] of Object.entries(t.books)) {
         const manual = VaultResources.manual(id, language);
         const state = !VaultResources.connected ? 'disconnected' : !manual ? 'missing' : 'ready';
-        const status = state === 'ready' ? (manual.language === 'zh' ? '中文' : 'English') + ' · ' + (manual.fallback ? t.fallback : t.ready) : t[state];
+        const status = state === 'ready' ? VaultResources.languageLabel(manual.language, language) + ' · ' + (manual.fallback ? t.fallback : t.ready) : t[state];
         const button = $('mbtn-' + id);
         button.innerHTML = `<span class="manual-number" aria-hidden="true">${id}</span><span class="manual-card-body"><strong>${title}</strong><span class="manual-card-description">${description}</span><span class="manual-card-meta"><span class="manual-state" data-state="${state}">${status}</span>${id === recommended ? `<span class="manual-recommended">${t.recommended}</span>` : ''}</span></span>`;
         button.setAttribute('aria-controls', 'manual-reader');
@@ -58,7 +58,8 @@
       const manual = VaultResources.manual(manualId, language);
       $('manual-title').textContent = book[0];
       $('manual-description').textContent = book[1];
-      $('manual-language').textContent = manual ? (manual.language === 'zh' ? '中文 PDF' : 'English PDF') : 'PDF';
+      const languageName = manual ? VaultResources.languageLabel(manual.language, language) : '';
+      $('manual-language').textContent = manual ? (manual.language === 'zh' ? '中文 PDF' : manual.language === 'en' ? 'English PDF' : languageName + ' PDF') : 'PDF';
       $('manual-connect').hidden = VaultResources.connected;
       $('manual-filename').hidden = !manual;
     },
