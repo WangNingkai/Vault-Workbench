@@ -100,6 +100,21 @@ These screenshots show the current Chinese interface. Click an image to view it 
 
 </details>
 
+
+### Automatic multi-plate 3MF
+
+Connect the Vault folder and click **Auto-plate 3MF** on a saved build. All copies for that build are packed into multiple plates in one project. In Bambu Studio, open it **as a project**, rather than importing geometry only, to retain plate assignments.
+
+- Uses the P1S 256 × 256 mm bed, avoids its 18 × 28 mm front-left cutter exclusion, and reserves at least 5 mm edges and 6 mm gaps.
+- Rectangle packing tries 0° / 90° first, then diagonal in-plane orientations for parts that otherwise do not fit. Z orientation, scale and coordinate precision are retained. Plate count is not guaranteed to be minimal.
+- Checks the profile's default 250 mm height. Oversized objects stop export with a filename and dimensions; no silent scaling or omitted parts.
+- This is a layout project with `Vault … layout` configuration names, not calibrated print settings. After opening, select your actual P1S printer/nozzle, process and material presets. Supports, brims and purge towers need additional space and may require rearrangement in the slicer.
+- Complete divider quantities (0 for unused files); missing files block export. Hardware is excluded.
+- Limits: 36 plates, 10,000 copies, and 128 MiB / 12 million triangles per STL. Files are processed individually with no cumulative triangle limit. Reduce the batch or process individual STL files if exceeded.
+
+Validation: the real S3 drawer produced 2 plates / 18 instances, retained after import and re-export with Bambu Studio 02.08.02.61 CLI. No print job was sent.
+
+
 ## Development and tests
 
 No build step is needed to run the project. The 3D preview uses Three.js and a Web Worker. Tests require Node.js with global `File`, `Blob`, and `fetch`, plus Python 3.
@@ -126,3 +141,5 @@ After changing `assets/stl-worker.js`, rebuild the preview engine as described i
 This project is not affiliated with USSA Design. VAULT models, manuals, and product images originate from [USSA Design](https://www.ussadesign.com/pages/vault). Original STL and PDF files are not distributed with this repository; original design content shown in screenshots belongs to its respective rights holders.
 
 Third-party licenses: [Three.js](assets/vendor/three-LICENSE.txt) · [Geist](assets/geist-LICENSE.txt). No separate project code license has been provided.
+
+[fflate 0.8.2 (MIT)](assets/vendor/fflate-LICENSE.txt)

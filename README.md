@@ -57,7 +57,7 @@ python3 scripts/preview-server.py --resource-root "/path/to/Vault"
 | 3D 预览 | 旋转、缩放、核对模型尺寸、保存副本；脚本模式支持定位原文件 |
 | 配件与改造 | 查看适配的底板、隔板和替代件；按 8 类用途浏览底座、轮组、提手等改造件 |
 | 说明书 | 按用途选择 5 本指南，查看本地可用状态，跳转相关安装页面，缺少当前语言时自动回退 |
-| 打印清单 | 保存多个方案，按套数汇总 STL 和五金，填写隔板用量，记录进度并导出 CSV |
+| 打印清单 | 保存多个方案，按套数汇总 STL 和五金，填写隔板用量，记录进度，导出 CSV 或 自动分盘 3MF |
 
 ## 界面预览
 
@@ -100,6 +100,21 @@ python3 scripts/preview-server.py --resource-root "/path/to/Vault"
 
 </details>
 
+
+### 自动分盘 3MF
+
+连接 Vault 文件夹后，在打印清单的单个方案中点击「自动分盘 3MF」。工作台按本方案的模块数量导出全部零件实例，并自动分配到多个打印盘，保存在同一个 3MF 项目中。在 Bambu Studio 中选择「打开项目」，不要仅导入几何模型，否则可能丢失分盘信息。
+
+- 按 P1S 的 256 × 256 mm 平台排布，避开左前角 18 × 28 mm 切刀禁区；保留至少 5 mm 边距和 6 mm 零件间距。
+- 使用矩形包围盒排布，优先尝试 0° / 90°，单件放不下时尝试斜向排布；不改变原始 STL 的 Z 轴打印朝向、比例和坐标精度，不保证盘数最少。
+- 默认高度按官方切片预设的 250 mm 检查。单件放不下时显示文件名和尺寸，不会缩小模型或静默漏件。
+- 这是排盘项目，配置名称以 `Vault … layout` 标识，不提供校准后的打印参数。打开后请重新选择实际的 P1S 打印机/喷嘴、工艺和耗材预设，并检查支撑、裙边和擦料塔；它们额外占用的区域不包含在模型包围盒中，必要时在切片软件内重新排布。
+- 隔板份数须填齐，不需要的填 0；缺失文件会阻止导出。五金不包含在模型中。
+- 每个项目最多 36 盘、1 万个实例；逐个读取和压缩 STL，不对整套方案的三角面总数设上限。单个 STL 不超过 128 MiB / 1200 万个三角面。超限时减少模块数量分批导出，或分别处理 STL。
+
+验证：真实 S3 抽屉导出为 2 盘 / 18 个实例，经本机 Bambu Studio 02.08.02.61 CLI 导入再导出，分盘和份数保持一致。没有发送打印任务。
+
+
 ## 开发与测试
 
 项目无需构建即可运行。3D 预览使用 Three.js 和 Web Worker；测试需要支持全局 `File`、`Blob`、`fetch` 的 Node.js，以及 Python 3。
@@ -126,3 +141,7 @@ node tests/assembly-readiness.browser.cjs /path/to/agent-browser
 本项目与 USSA Design 无隶属关系。VAULT 模型、说明书及产品图片来源于 [USSA Design](https://www.ussadesign.com/pages/vault)，原始 STL 和 PDF 不随仓库分发，截图中的原始设计内容归其权利人所有。
 
 第三方许可：[Three.js](assets/vendor/three-LICENSE.txt) · [Geist](assets/geist-LICENSE.txt)。项目代码暂未提供独立许可证。
+
+[fflate 0.8.2 (MIT)](assets/vendor/fflate-LICENSE.txt)
+
+分盘规则参考：[P1S 官方规格](https://bambulab.com/en-us/p1p) · [Bambu Studio 多盘实现](https://github.com/bambulab/BambuStudio/blob/master/src/slic3r/GUI/PartPlate.cpp) · [3MF 读写实现](https://github.com/bambulab/BambuStudio/blob/master/src/libslic3r/Format/bbs_3mf.cpp)。

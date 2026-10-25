@@ -6,7 +6,7 @@
     en: {
       tab: 'Print plan', title: 'Your print plan', intro: 'Combine builds into one STL and hardware list. Totals include all builds, including completed ones. Status applies to the entire named batch.',
       name: 'Build name (optional)', count: 'Number of modules', add: 'Add to print plan', view: 'View print plan', empty: 'Your plan is empty. Choose a configuration in Component Finder, then add it here.',
-      export: 'Export CSV', remove: 'Remove', restore: 'Load configuration', status: 'Batch status', pending: 'To print', printed: 'Printed', assembled: 'Assembled',
+      export3mf: 'Auto-plate 3MF', exporting3mf: 'Exporting…', exported3mf: count => `3MF downloaded · ${count} P1S plate(s). Open as a project in Bambu Studio. Select your P1S printer/nozzle, process and material presets, then check supports and brim before slicing.`, plateHint: 'P1S · 256 × 256 mm · 5 mm edges / 6 mm gaps · cutter exclusion reserved. Keeps STL orientation; rotates only in the plate plane. Layout project only; select actual printing presets after opening.', oversized: 'Part does not fit the P1S safe area / 250 mm default height:', tooManyPlates: 'More than 36 plates are needed. Reduce the module count and export in batches.', exportFailed: 'Export failed. Reconnect your folder and try again.', tooLarge: 'Export limit reached: at most 10,000 copies; each STL must be at most 128 MiB and 12 million triangles. Reduce the batch size or process the indicated STL separately.', invalidMesh: 'Invalid STL mesh:', missing3mf: 'Missing local STL:', export: 'Export CSV', remove: 'Remove', restore: 'Load configuration', status: 'Batch status', pending: 'To print', printed: 'Printed', assembled: 'Assembled',
       layout: 'Layout quantities · STL copies per module', layoutHint: 'Enter a quantity for each divider file; enter 0 when unused. Paired parts already in one STL count as one copy. Changing quantities resets the batch to “To print”.',
       unresolved: 'Fill in all layout quantities below before exporting.', files: 'Combined STL list', hardware: 'Combined hardware reference',
       copies: 'STL copies', unknown: 'Quantity needed', missing: 'Missing locally', disconnected: 'Select your Vault folder to check file availability.',
@@ -21,7 +21,7 @@
     zh: {
       tab: '打印清单', title: '你的打印清单', intro: '合并多种配置的 STL 和五金数量。汇总包含全部方案，包括已完成的方案；进度状态适用于整批模块。',
       name: '方案名称（可选）', count: '模块数量', add: '加入打印清单', view: '查看打印清单', empty: '清单还是空的。先在组件查找器选好配置，再加入打印清单。',
-      export: '导出 CSV', remove: '移除', restore: '载入配置', status: '整批进度', pending: '待打印', printed: '已打印', assembled: '已组装',
+      export3mf: '自动分盘 3MF', exporting3mf: '正在导出…', exported3mf: count => `3MF 已下载 · 已自动分为 ${count} 个 P1S 打印盘。请在 Bambu Studio 中作为项目打开，请重新选择 P1S 打印机、喷嘴、工艺和耗材预设，再核对支撑和裙边。`, plateHint: 'P1S · 256 × 256 mm · 边缘留 5 mm / 零件间隔 6 mm · 避开切刀禁区。保留 STL 朝向，仅允许平面旋转；这是排盘项目，打开后需选择实际打印预设。', oversized: '零件超出 P1S 安全排布区域或默认 250 mm 高度：', tooManyPlates: '所需打印盘超过 36 个，请减少模块数量后分批导出。', exportFailed: '导出失败，请重新连接文件夹后重试。', tooLarge: '超出导出上限：零件实例最多 1 万，单个 STL 最多 128 MiB / 1200 万个三角面。请减少模块数量，或单独处理提示的文件。', invalidMesh: 'STL 网格无效：', missing3mf: '本地缺少 STL：', export: '导出 CSV', remove: '移除', restore: '载入配置', status: '整批进度', pending: '待打印', printed: '已打印', assembled: '已组装',
       layout: '布局数量 · 每个模块的 STL 打印份数', layoutHint: '填写每种分隔板文件的份数，不需要的填 0。一个 STL 内已配对的零件按一份计算。修改数量后，整批进度重置为“待打印”。',
       unresolved: '请先补齐下方布局数量，再导出清单。', files: '合并后的 STL 清单', hardware: '五金备料汇总',
       copies: 'STL 份数', unknown: '待填数量', missing: '本地缺失', disconnected: '选择 Vault 文件夹后，可检查清单中文件是否齐全。',
@@ -36,6 +36,15 @@
   };
   let language = 'en';
   let api;
+  let exporting = false;
+  const exportNotices = new Map();
+  function refreshExports() {
+    $('plan-entries').querySelectorAll('[data-build-index]').forEach(row => {
+      const build = api.store.value.builds[Number(row.dataset.buildIndex)];
+      row.querySelector('[data-action="export3mf"]').disabled = exporting;
+      row.querySelector('[data-3mf-status]').textContent = exportNotices.get(build.id) || '';
+    });
+  }
   const t = () => copy[language];
   function description(build) {
     const c = build.configuration;
@@ -61,7 +70,7 @@
     if (!preserveEditors) $('plan-entries').innerHTML = builds.map((build, index) => {
       const id = 'build-' + index;
       const layout = Object.entries(build.layout);
-      return `<li class="plan-entry" data-build-index="${index}"><p class="plan-description">${escape(description(build))}</p><div class="plan-fields"><div><label for="${id}-name">${t().name}</label><input id="${id}-name" data-field="name" maxlength="80" value="${escape(build.name)}"></div><div><label for="${id}-count">${t().count}</label><input id="${id}-count" data-field="count" type="number" min="1" max="999" step="1" required value="${build.count}"></div><div><label for="${id}-status">${t().status}</label><select id="${id}-status" data-field="status">${BuildPlan.statuses.map(status => `<option value="${status}" ${status === build.status ? 'selected' : ''}>${t()[status]}</option>`).join('')}</select></div></div>${layout.length ? `<fieldset class="plan-layout"><legend>${t().layout}</legend><p class="source-note">${t().layoutHint}</p>${layout.map(([path, qty], i) => `<div class="plan-layout-row"><label for="${id}-layout-${i}">${escape(path.split('/').pop())}</label><input id="${id}-layout-${i}" data-layout="${escape(path)}" type="number" min="0" max="999" step="1" placeholder="${t().unknown}" value="${qty ?? ''}"></div>`).join('')}</fieldset>` : ''}<div class="plan-actions"><button type="button" data-action="restore">${t().restore}</button><button type="button" data-action="remove">${t().remove}</button></div></li>`;
+      return `<li class="plan-entry" data-build-index="${index}"><p class="plan-description">${escape(description(build))}</p><div class="plan-fields"><div><label for="${id}-name">${t().name}</label><input id="${id}-name" data-field="name" maxlength="80" value="${escape(build.name)}"></div><div><label for="${id}-count">${t().count}</label><input id="${id}-count" data-field="count" type="number" min="1" max="999" step="1" required value="${build.count}"></div><div><label for="${id}-status">${t().status}</label><select id="${id}-status" data-field="status">${BuildPlan.statuses.map(status => `<option value="${status}" ${status === build.status ? 'selected' : ''}>${t()[status]}</option>`).join('')}</select></div></div>${layout.length ? `<fieldset class="plan-layout"><legend>${t().layout}</legend><p class="source-note">${t().layoutHint}</p>${layout.map(([path, qty], i) => `<div class="plan-layout-row"><label for="${id}-layout-${i}">${escape(path.split('/').pop())}</label><input id="${id}-layout-${i}" data-layout="${escape(path)}" type="number" min="0" max="999" step="1" placeholder="${t().unknown}" value="${qty ?? ''}"></div>`).join('')}</fieldset>` : ''}<p class="source-note">${t().plateHint}</p><p class="source-note" data-3mf-status role="status" aria-live="polite"></p><div class="plan-actions"><button type="button" data-action="export3mf">${t().export3mf}</button><button type="button" data-action="restore">${t().restore}</button><button type="button" data-action="remove">${t().remove}</button></div></li>`;
     }).join('');
     if (!preserveEditors) {
       $('plan-entries').querySelectorAll('[data-build-index]').forEach(row => {
@@ -98,6 +107,7 @@
     STLPreview.decorate($('plan-files'));
     LocalFiles.decorate($('plan-files'));
     if (root.FileDetails) FileDetails.decorate($('plan-files'), language);
+    refreshExports();
     storageNotice();
     if (root.ScrollTrigger && !preserveEditors) ScrollTrigger.refresh();
   }
@@ -150,12 +160,40 @@
       row.querySelector('[data-field="status"]').value = build.status;
       save(builds, true);
     });
-    $('plan-entries').addEventListener('click', event => {
+    $('plan-entries').addEventListener('click', async event => {
       const button = event.target.closest('button[data-action]');
       if (!button) return;
       const index = Number(button.closest('[data-build-index]').dataset.buildIndex);
       const builds = api.store.value.builds;
-      if (button.dataset.action === 'restore') api.restore(builds[index]);
+      if (button.dataset.action === 'export3mf') {
+        if (exporting) return;
+        const row = button.closest('[data-build-index]');
+        const invalid = row.querySelector('input:invalid');
+        if (invalid) { invalid.reportValidity(); return; }
+        const setNotice = text => { exportNotices.set(builds[index].id, text); refreshExports(); };
+        if (!VaultResources.connected) { setNotice(t().disconnected); return; }
+        const build = BuildPlan.entry(builds[index]);
+        exporting = true;
+        refreshExports();
+        try {
+          const blob = await ThreeMF.create(build, path => VaultResources.getFile(path), (done, total) => {
+            setNotice(`${t().exporting3mf} ${done}/${total}`);
+          });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url; link.download = ThreeMF.filename(build);
+          document.body.append(link); link.click(); link.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 60000);
+          setNotice(t().exported3mf(blob.plateCount));
+        } catch (error) {
+          setNotice(error.code === 'unresolved' ? t().unresolved
+            : error.code === 'missing' ? `${t().missing3mf} ${error.path}`
+            : error.code === 'invalidMesh' ? `${t().invalidMesh} ${error.path}`
+            : error.code === 'oversized' ? `${t().oversized} ${error.path} (${error.dimensions.map(v => v.toFixed(1)).join(' × ')} mm)`
+            : error.code === 'tooManyPlates' ? t().tooManyPlates
+            : error.code === 'tooLarge' ? `${t().tooLarge}${error.path ? ' ' + error.path : ''}` : t().exportFailed);
+        } finally { exporting = false; refreshExports(); }
+      } else if (button.dataset.action === 'restore') api.restore(builds[index]);
       else { save(builds.filter((_, i) => i !== index)); ($('plan-entries').querySelector('button') || $('tab-btn-plan')).focus(); }
     });
     $('plan-export').addEventListener('click', () => {
